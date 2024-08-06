@@ -33,3 +33,6 @@ response = client.chat(
 )
 print(response)
 # endregion
+
+def fun_main():
+    pass
