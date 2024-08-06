@@ -34,5 +34,5 @@ response = client.chat(
 print(response)
 # endregion
 
-def fun_main():
+def dev_fun():
     pass
