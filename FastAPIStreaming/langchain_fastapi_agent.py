@@ -43,7 +43,7 @@ def say_something(text_to_say: str):
     Args:
         text_to_say: 要播放的内容.
     """
-    print(text_to_say,'----------')
+    print(text_to_say, '----------')
     return 'task complete!'
 
 

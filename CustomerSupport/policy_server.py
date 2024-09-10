@@ -4,13 +4,25 @@ import numpy as np
 import openai
 from langchain_core.tools import tool
 
-response = requests.get(
-    "https://storage.googleapis.com/benchmarks-artifacts/travel-db/swiss_faq.md"
-)
-response.raise_for_status()
-faq_text = response.text
+
+# response = requests.get(
+#     "https://storage.googleapis.com/benchmarks-artifacts/travel-db/swiss_faq.md"
+# )
+# response.raise_for_status()
+# faq_text = response.text
+
+def read_local_file(file_path):
+    # 打开文件
+    with open(file_path, "r", encoding="utf-8") as file:
+        # 读取文件内容
+        file_contents = file.read()
+        return file_contents
+
+
+faq_text = read_local_file('../CustomerSupport/swiss_faq-zh-CN-dual.md')
 
 docs = [{"page_content": txt} for txt in re.split(r"(?=\n##)", faq_text)]
+
 
 class VectorStoreRetriever:
     def __init__(self, docs: list, vectors: list, oai_client):
@@ -38,7 +50,9 @@ class VectorStoreRetriever:
             {**self._docs[idx], "similarity": scores[idx]} for idx in top_k_idx_sorted
         ]
 
+
 retriever = VectorStoreRetriever.from_docs(docs, openai.Client())
+
 
 @tool
 def lookup_policy(query: str) -> str:

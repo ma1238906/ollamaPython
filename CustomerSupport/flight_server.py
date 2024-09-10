@@ -9,6 +9,7 @@ from langchain_core.tools import tool
 from db_prepare import db
 from langchain_core.runnables.config import RunnableConfig
 
+
 config = {
     "configurable": {
         # The passenger_id is used in our flight tools to
@@ -23,11 +24,14 @@ config = {
 def fetch_user_flight_information() -> list[dict]:
     """Fetch all tickets for the user along with corresponding flight information and seat assignments.
 
+    Args:
+
     Returns:
         A list of dictionaries where each dictionary contains the ticket details,
         associated flight details, and the seat assignments for each ticket belonging to the user.
     """
     # config = ensure_config()  # Fetch from the context
+
     configuration = config.get("configurable", {})
     passenger_id = configuration.get("passenger_id", None)
     if not passenger_id:
@@ -62,11 +66,11 @@ def fetch_user_flight_information() -> list[dict]:
 
 @tool
 def search_flights(
-    departure_airport: Optional[str] = None,
-    arrival_airport: Optional[str] = None,
-    start_time: Optional[date | datetime] = None,
-    end_time: Optional[date | datetime] = None,
-    limit: int = 20,
+        departure_airport: Optional[str] = None,
+        arrival_airport: Optional[str] = None,
+        start_time: Optional[date | datetime] = None,
+        end_time: Optional[date | datetime] = None,
+        limit: int = 20,
 ) -> list[dict]:
     """Search for flights based on departure airport, arrival airport, and departure time range."""
     conn = sqlite3.connect(db)
@@ -106,7 +110,7 @@ def search_flights(
 @tool
 def update_ticket_to_new_flight(ticket_no: str, new_flight_id: int) -> str:
     """Update the user's ticket to a new valid flight."""
-    config = ensure_config()
+    # config = ensure_config()
     configuration = config.get("configurable", {})
     passenger_id = configuration.get("passenger_id", None)
     if not passenger_id:
@@ -174,7 +178,7 @@ def update_ticket_to_new_flight(ticket_no: str, new_flight_id: int) -> str:
 @tool
 def cancel_ticket(ticket_no: str) -> str:
     """Cancel the user's ticket and remove it from the database."""
-    config = ensure_config()
+    # config = ensure_config()
     configuration = config.get("configurable", {})
     passenger_id = configuration.get("passenger_id", None)
     if not passenger_id:
