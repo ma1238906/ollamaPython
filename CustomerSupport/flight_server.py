@@ -9,7 +9,6 @@ from langchain_core.tools import tool
 from db_prepare import db
 from langchain_core.runnables.config import RunnableConfig
 
-
 config = {
     "configurable": {
         # The passenger_id is used in our flight tools to
@@ -19,6 +18,7 @@ config = {
         "thread_id": '1',
     }
 }
+
 
 @tool
 def fetch_user_flight_information() -> list[dict]:
@@ -65,6 +65,14 @@ def fetch_user_flight_information() -> list[dict]:
 
 
 @tool
+def select_by_customer(location):
+    """向用户询问有多少行李
+    """
+    print(f'展示地图{location}')
+    return '已向用户询问'
+
+
+@tool
 def search_flights(
         departure_airport: Optional[str] = None,
         arrival_airport: Optional[str] = None,
@@ -104,6 +112,7 @@ def search_flights(
     cursor.close()
     conn.close()
 
+    print('send message to client.')
     return results
 
 
