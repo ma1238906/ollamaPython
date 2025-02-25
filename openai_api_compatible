@@ -1,0 +1,123 @@
+from fastapi import FastAPI, HTTPException, Request
+from pydantic import BaseModel
+from openai import AsyncOpenAI
+from dotenv import load_dotenv
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+import json
+
+# 加载环境变量
+load_dotenv()
+
+app = FastAPI()
+
+chat_history = []
+
+client = AsyncOpenAI(
+    api_key='sk-key',
+    base_url='https://api.moonshot.cn/v1'
+)
+
+# 配置CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+class ChatCompletionRequest(BaseModel):
+    model: str = "moonshot-v1-auto"
+    messages: list
+    temperature: float = 0.7
+    max_tokens: int = None
+    top_p: float = 1.0
+    n: int = 1
+    stream: bool = False
+    stop: str = None
+    presence_penalty: float = 0.0
+    frequency_penalty: float = 0.0
+
+
+async def generate_stream_response(response):
+    async for chunk in response:
+        if chunk.choices:
+            data = {
+                "id": chunk.id,
+                "object": chunk.object,
+                "created": chunk.created,
+                "model": chunk.model,
+                "choices": [{
+                    "index": choice.index,
+                    "delta": {
+                        "content": choice.delta.content
+                    },
+                    "finish_reason": choice.finish_reason
+                } for choice in chunk.choices]
+            }
+            # print(data['choices'][0]['delta']['content'], end='')
+            yield f"data: {json.dumps(data)}\n\n"
+    # print('')
+    yield "data: [DONE]\n\n"
+
+
+@app.post("/v1/chat/completions")
+async def chat_completions(request: ChatCompletionRequest):
+    print(request.messages)
+    try:
+        if request.stream:
+            response = await client.chat.completions.create(
+                model=request.model,
+                messages=request.messages,
+                temperature=request.temperature,
+                max_tokens=request.max_tokens,
+                top_p=request.top_p,
+                n=request.n,
+                stream=True,
+                stop=request.stop,
+                presence_penalty=request.presence_penalty,
+                frequency_penalty=request.frequency_penalty
+            )
+            return StreamingResponse(
+                generate_stream_response(response),
+                media_type="text/event-stream"
+            )
+        else:
+            response = await client.chat.completions.create(
+                model=request.model,
+                messages=request.messages,
+                temperature=request.temperature,
+                max_tokens=request.max_tokens,
+                top_p=request.top_p,
+                n=request.n,
+                stream=False,
+                stop=request.stop,
+                presence_penalty=request.presence_penalty,
+                frequency_penalty=request.frequency_penalty
+            )
+            print(response.choices[0].message)
+            return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/v1/models")
+async def get_models():
+    return {
+        "object": "list",
+        "data":
+            [
+                {
+                    "created": 1738727463, "id": "moonshot-v1-auto", "object": "model", "owned_by": "moonshot",
+                    "permission": [
+                        {"created": 0, "id": "", "object": "", "organization": "moonshot", "group": "moonshot",
+                         "is_blocking": False}], "root": "", "parent": ""}
+            ]}
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=8000)
